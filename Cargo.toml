@@ -1,0 +1,12 @@
+[package]
+name = "aoc"
+version = "0.1.0"
+authors = ["william.rudenmalmhogman <me@whn.se>"]
+edition = "2018"
+
+[lib]
+bench = false
+
+[dependencies]
+aoc-runner = "0.3.0"
+aoc-runner-derive = "0.3.0"
