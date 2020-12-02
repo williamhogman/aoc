@@ -20,6 +20,29 @@ impl PasswordRule {
 	n >= self.min && n <= self.max
     }
 
+    fn is_valid_opt(&self) -> bool {
+	let mut n: u8 = 0;
+	let imax: u8 = (self.password.len() - 1) as u8;
+	for (c, i) in self.password.chars().zip(0u8..) {
+	    if c == self.target {
+		n += 1;
+	    }
+	    if n > self.max {
+		return false
+	    }
+	    let remaining = imax - i;
+	    let remaining_must = self.min - n;
+	    let remaining_may = self.max - n;
+
+	    if remaining < remaining_must {
+		return false
+	    } else if remaining < remaining_may {
+		return true
+	    }
+	}
+	n >= self.min && n <= self.max
+    }
+
     fn is_valid_part_two(&self) -> bool {
 	let min_ok = self.password.chars().nth((self.min - 1).into()).map(|c| c == self.target).unwrap();
 	let max_ok = self.password.chars().nth((self.max - 1).into()).map(|c| c == self.target).unwrap();
@@ -54,6 +77,14 @@ pub fn input_generator(input: &str) -> Vec<PasswordRule> {
 pub fn day2(input: &[PasswordRule]) -> usize {
     input.iter()
 	.map(|r| r.is_valid())
+	.filter(|r| *r == true)
+	.count()
+}
+
+#[aoc(day2, part1, opt)]
+pub fn day2_opt(input: &[PasswordRule]) -> usize {
+    input.iter()
+	.map(|r| r.is_valid_opt())
 	.filter(|r| *r == true)
 	.count()
 }
