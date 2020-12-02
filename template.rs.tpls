@@ -1,0 +1,16 @@
+/*
+${EXERCISE_COMMENT}
+*/
+#[aoc_generator(day${DAY})]
+pub fn input_generator(input: &str) -> Vec<u32> {
+    input
+        .lines()
+        .map(|l| l.parse().unwrap())
+	.collect()
+}
+
+
+#[aoc(day${DAY}, part1)]
+pub fn part1(input: &[u32]) -> u32 {
+    unreachable!()
+}
