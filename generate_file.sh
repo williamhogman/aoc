@@ -5,9 +5,6 @@ EXERCISE=$(curl -s -b $(cat cookies.txt) "https://adventofcode.com/2020/day/$DAY
 
 export EXERCISE_COMMENT=$EXERCISE
 
-
-DATA=$()
-
 FILE="src/day${DAY}.rs"
 if test -f $FILE; then
     echo "$FILE exists already."
