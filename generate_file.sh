@@ -7,13 +7,16 @@ export EXERCISE_COMMENT=$EXERCISE
 
 FILE="src/day${DAY}.rs"
 if test -f $FILE; then
-    echo "$FILE exists already."
-    BACKUP="src/day${DAY}_from_template.rs.bak"
-    cat ./template.rs.tpls  | envsubst '${EXERCISE_COMMENT},${DAY}' > $BACKUP
-    echo "Wrote to $BACKUP."
-    exit 0
+    echo "Already exists $FILE"
+else
+    cat ./template.rs.tpls  | envsubst '${EXERCISE_COMMENT},${DAY}' > $FILE
+    echo "Wrote to $FILE2"
 fi
 
-cat ./template.rs.tpls  | envsubst '${EXERCISE_COMMENT},${DAY}' > $FILE
-
-echo "Wrote to $FILE."
+FILE2="py/day${DAY}.py"
+if test -f $FILE2; then
+    echo "Already exists $FILE2"
+else
+    echo "Wrote to $FILE2"
+    cat ./template.py.tpls  | envsubst '${EXERCISE_COMMENT},${DAY}' > $FILE2
+fi

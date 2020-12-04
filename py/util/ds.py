@@ -6,7 +6,7 @@ from fastcore.all import listify, L, tuplify, Self
 class Table:
     def __init__(self, x, raw=False):
         if raw:
-            self.t = Table(x)
+            self.t = x
         else:
             self.t = L(map(tuplify, x))
 
@@ -24,10 +24,10 @@ class Table:
         return self.t.map(Self[n])
 
     def map(self, *args, **kwargs):
-        return Table(self.t.map(*args, **kwargs))
+        return Table(self.t.map(*args, **kwargs), raw=True)
 
     def reduce(self, *args, **kwargs):
-        return Table([self.t.reduce(*args, **kwargs)])
+        return Table(self.t.reduce(*args, **kwargs), raw=True)
 
     def filter(self, *args, **kwargs):
-        return Table(self.t.filter(*args, **kwargs))
+        return Table(self.t.filter(*args, **kwargs), raw=True)

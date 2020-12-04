@@ -1,0 +1,15 @@
+"""
+${EXERCISE_COMMENT}
+"""
+
+from fastcore.all import L, Self
+from util import *
+
+e = Exercise($DAY)
+
+@e.part1()
+def part1(xs):
+    return None
+
+
+e()

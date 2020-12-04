@@ -2,7 +2,7 @@ import requests
 
 
 def filename(day):
-    return "../input/day{}.txt".format(day)
+    return "../input/2020/day{}.txt".format(day)
 
 
 def download_day(day):

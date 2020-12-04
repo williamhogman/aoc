@@ -1,6 +1,6 @@
 import re
 
-from fastcore.all import store_attr, L, tuplify, detuplify, Self
+from fastcore.all import store_attr, L, tuplify, detuplify, Self, noop
 from .io import read
 from .ds import Table
 
@@ -22,14 +22,14 @@ def prn(x):
     return x
 
 class Parser:
-    def __init__(self, line_sep="\n", field_sep=r"(?:[\,:\-]\s*)|(?:\s+)", ints=True, skip_last=True):
+    def __init__(self, line_sep="\n", field_sep=r"(?:[\,:\-]\s*)|(?:\s+)", ints=True, skip_last=True, trim_blank=True):
         store_attr()
 
     def __call__(self, data: str):
         l_re = re.compile(self.line_sep)
         ls = L(l_re.split(data))
         fs_re = re.compile(self.field_sep)
-        r = L(ls).map(fs_re.split).map(L).map(Self.map(maybe_number, ints=self.ints))[:-1]
+        r = L(ls).map(fs_re.split).filter(lambda x: (not self.trim_blank) or (x is not None)).map(L).map(Self.map(maybe_number, ints=self.ints))[:-1]
         return Table(r)
 
 
@@ -51,8 +51,15 @@ class Exercise:
         self.f_loader = f
         return f
 
-    def transformer(self, f):
-        self.f_transformer = f
+    def transformer(self, *args, **kwargs):
+        def inner(f):
+            self.f_transformer = self._deco_fn(f, **kwargs)
+            return f
+        if len(args) == 1 and callable(args[0]):
+            return inner(args[0])
+        else:
+            return inner
+
         return f
 
     def _deco_fn(self, f, map=False, reduce=None):
@@ -61,16 +68,16 @@ class Exercise:
         else:
             def _inner(x):
                 mapped = x.map(f)
-                if reduce == "sum":
+                if reduce is None:
+                    return mapped
+                elif reduce == "sum":
                     return mapped.t.reduce(lambda a, b: a + b)
                 elif reduce == "prod":
                     return mapped.t.reduce(lambda a, b: a * b)
                 elif reduce == "count":
-                    return len(mapped.t.map(lambda x: x[0]).filter(lambda x: x))
+                    return len(mapped.t.map(lambda x: x).filter(lambda x: x))
                 elif callable(f):
                     return mapped.t.reduce(f)
-                elif reduce is None:
-                    return mapped
             return _inner
 
 
