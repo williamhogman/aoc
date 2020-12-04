@@ -54,7 +54,7 @@ Answer: [answer              ] [[Submit]]
 You can also [Shareon Twitter Mastodon] this puzzle.
  */
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Passport {
     byr: Option<String>,
     iyr: Option<String>,
@@ -63,21 +63,24 @@ pub struct Passport {
     hcl: Option<String>,
     ecl: Option<String>,
     pid: Option<String>,
-    cid: Option<String>,
+    // cid is not used skip
+    // cid: Option<String>,
 }
 
 
 impl Passport {
     fn set_field(&mut self, name: &str, value: &str) {
+	let x = Some(value.to_string())
 	match name {
-	    "byr" => self.byr = Some(value.to_string()),
-	    "iyr" => self.iyr = Some(value.to_string()),
-	    "eyr" => self.eyr = Some(value.to_string()),
-	    "hgt" => self.hgt = Some(value.to_string()),
-	    "hcl" => self.hcl = Some(value.to_string()),
-	    "ecl" => self.ecl = Some(value.to_string()),
-	    "pid" => self.pid = Some(value.to_string()),
-	    "cid" => self.cid = Some(value.to_string()),
+	    "byr" => self.byr = x,
+	    "iyr" => self.iyr = x,
+	    "eyr" => self.eyr = x,
+	    "hgt" => self.hgt = x,
+	    "hcl" => self.hcl = x,
+	    "ecl" => self.ecl = x,
+	    "pid" => self.pid = x,
+	    "cid" => {}
+	    //"cid" => self.cid = Some(value.to_string()),
 	    _ => unreachable!()
 	}
     }
@@ -86,67 +89,48 @@ impl Passport {
     }
 
     fn is_byr_valid(&self) -> bool {
-	let byr = self.byr.as_ref().unwrap().parse();
-	between(byr.unwrap(), 1920, 2002)
+	self.byr.and_then(|x| x.parse::<usize>().ok()).filter(|x| between(*x, 1920, 2002)).is_some()
     }
 
     fn is_iyr_valid(&self) -> bool {
-	let iyr = self.iyr.as_ref().unwrap().parse::<usize>();
-	between(iyr.unwrap(), 2010, 2020)
+	self.iyr.and_then(|x| x.parse::<usize>().ok()).filter(|x| between(x, 2010, 2020)).is_some()
     }
 
     fn is_eyr_valid(&self) -> bool {
-	let eyr = self.eyr.as_ref().unwrap().parse::<usize>();
-	between(eyr.unwrap(), 2020, 2030)
+	self.eyr.and_then(|x| x.parse::<usize>().ok()).filter(|x| between(x, 2020, 2030)).is_some()
     }
 
     fn is_hgt_valid(&self) -> bool {
-	let hgt = self.hgt.as_ref().unwrap();
-	if hgt.ends_with("cm") {
-	    if let Ok(hgt) = hgt.replace("cm", "").parse() {
-		between(hgt, 150, 193)
+	self.hgt.and_then(|x| {
+	    if hgt.ends_with("cm") {
+		hgt.replace("cm", "").parse().ok().filter(|y| between(y, 150, 193))
+	    } else if hgt.ends_with("in") {
+		hgt.replace("in", "").parse().ok().filter(|y| between(y, 59, 76))
 	    } else {
-		false
+		None
 	    }
-
-	} else if hgt.ends_with("in") {
-	    if let Ok(hgt) = hgt.replace("in", "").parse() {
-		between(hgt, 59, 76)
-	    } else {
-		false
-	    }
-	} else {
-	    false
-	}
+	}).is_some()
     }
 
     pub fn is_hcl_valid(&self) -> bool {
 	lazy_static! {
             static ref hcl_re: Regex = Regex::new(r"^#(?:[0-9a-fA-F]{3}){1,2}$").unwrap();
 	}
-	let hcl = self.hcl.as_ref().unwrap();
-	hcl_re.is_match(&hcl)
+	self.hcl.filter(|x| hcl_re.is_match(&hcl)).is_some()
     }
 
     pub fn is_ecl_valid(&self) -> bool {
-	match &self.ecl.as_ref().unwrap()[..] {
-	    "amb" => true,
-	    "blu" => true,
-	    "brn" => true,
-	    "gry" => true,
-	    "grn" => true,
-	    "hzl" => true,
-	    "oth" => true,
+	self.ecl.filter(|x| match &x[..] {
+	    "amb" | "blu" | "brn" | "gry" | "grn" | "hzl" | "oth" => true,
 	    _ => false
-	}
+	}).is_some()
     }
 
     fn is_pid_valid(&self) -> bool {
 	lazy_static! {
             static ref pid_re: Regex = Regex::new(r"^\d{9}$").unwrap();
 	}
-	let pid = self.pid.as_ref().unwrap();
-	pid_re.is_match(&pid)
+	self.pid.filter(|x| pid_re.is_match(&pid)).is_some()
     }
 
     pub fn is_p2_valid(&self) -> bool {
@@ -161,10 +145,9 @@ fn between(x: usize, min: usize, max: usize) -> bool {
 
 #[aoc_generator(day4)]
 pub fn input_generator(input: &str) -> Vec<Passport> {
-    let mut pps: Vec<Passport> = Vec::new();
-    let mut active_pp = Passport{byr: None, iyr: None, eyr: None, hgt: None, hcl: None, ecl: None, pid: None, cid: None};
-    for line in input.split("\n\n") {
-	let fs = line.split_whitespace()
+    input.split("\n\n").map(|l| {
+	let pp = Passport{}
+	l.split_whitespace()
 	    .map(|x| x.trim())
 	    .filter(|x| !x.is_empty())
 	    .map(|f| {
@@ -173,14 +156,12 @@ pub fn input_generator(input: &str) -> Vec<Passport> {
 		} else {
 		    unreachable!()
 		}
-	    }).collect::<Vec<(&str, &str)>>();
-	for f in fs {
-	    active_pp.set_field(f.0, f.1)
-	}
-	pps.push(active_pp);
-	active_pp = Passport{byr: None, iyr: None, eyr: None, hgt: None, hcl: None, ecl: None, pid: None, cid: None};
-    }
-    pps
+	    })
+	    .for_each(|(k, v)| {
+		pp.set_field(k, v)
+	    })
+	    pp
+    }).collect()
 }
 
 
