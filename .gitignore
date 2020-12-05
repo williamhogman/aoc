@@ -1,5 +1,5 @@
 /target
 cookies.txt
 py/**/__pycache__
-*.pyc
-*.bak
+**.pyc
+**.bak
