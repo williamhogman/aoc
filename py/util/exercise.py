@@ -76,6 +76,10 @@ class Exercise:
                     return mapped.t.reduce(lambda a, b: a * b)
                 elif reduce == "count":
                     return len(mapped.t.map(lambda x: x).filter(lambda x: x))
+                elif reduce == "max":
+                    return mapped.t.reduce(lambda a, b: max(a, b))
+                elif reduce == "min":
+                    return mapped.t.reduce(lambda a, b: min(a, b))
                 elif callable(f):
                     return mapped.t.reduce(f)
             return _inner
