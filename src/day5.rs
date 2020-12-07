@@ -47,39 +47,41 @@ highest seat ID on a boarding pass?
 To begin, get_your_puzzle_input.
 Answer: [answer              ] [[Submit]]
 You can also [Shareon Twitter Mastodon] this puzzle.
-*/
+ */
+const ASCII_R: u8 = 'R' as u8;
+const ASCII_B: u8 = 'B' as u8;
+const ASCII_F: u8 = 'F' as u8;
+const ASCII_L: u8 = 'L' as u8;
+
+
+#[inline]
+pub fn to_id(l: &str) -> u16 {
+    let mut bit: u16 = 16;
+    let mut num: u16 = 0;
+    for x in l.as_bytes() {
+	let to_set = (!(*x >> 2) & 0b1) as u16;
+	num |= (to_set << bit);
+	bit -= 1;
+    }
+    num
+}
+
 #[aoc_generator(day5)]
-pub fn input_generator(input: &str) -> Vec<(Vec<bool>, Vec<bool>)> {
+pub fn input_generator(input: &str) -> Vec<u16> {
     input
         .lines()
-        .map(|l| l.chars().map(|c| match c { 'R' | 'B' => true, 'F'|'L' => false, _ => unreachable!() }).collect::<Vec<bool>>())
-	.map(|l| (l.iter().take(l.len() - 3).map(|x| *x).collect(), l.iter().rev().take(3).map(|x| *x).collect()))
-	.collect()
+        .map(to_id).collect()
 }
-
-fn mid(mn: u8, mx: u8) -> u8 {
-    (mn / 2) + (mx / 2)
-}
-
-fn find(path: &[bool], range_min: u8, range_max: u8) -> u8 {
-    let (mut mn, mut mx) = (range_min, range_max);
-    for p in path[..path.len() - 1].iter() {
-	let m = mid(mn, mx);
-	if *p {
-	    mn = m + 1
-	} else {
-	    mx = m
-	}
-    }
-    if path[path.len() - 1] {
-	mn
-    } else {
-	mx
-    }
-}
-
 
 #[aoc(day5, part1)]
-pub fn part1(input: &[(Vec<bool>, Vec<bool>)]) -> usize {
-    input.iter().map(|(rs, ss)| ((find(rs, 0, 127)) as usize * 8) + (find(ss, 0, 7)) as usize).max().unwrap()
+pub fn part1(input: &[u16]) -> u16 {
+    *input.iter().max().unwrap()
+}
+
+#[aoc(day5, part2)]
+pub fn part2(input: &[u16]) -> u16 {
+    let min = *input.iter().min().unwrap();
+    let max = *input.iter().max().unwrap();
+    let chk = input.iter().fold(0, |a, b| a ^ b);
+    (min..=max).fold(chk, |a, b| a ^ b)
 }

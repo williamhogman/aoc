@@ -91,5 +91,5 @@ def part2(xs):
     for i in range(0, 128 * 8):
         if i not in s and i + 1 in s and i - 1 in s:
             return i
-        
+
 e()

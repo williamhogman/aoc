@@ -54,14 +54,15 @@ Answer: [answer              ] [[Submit]]
 You can also [Shareon Twitter Mastodon] this puzzle.
 */
 #[aoc_generator(day6)]
-pub fn input_generator(input: &str) -> Vec<String> {
-    input.split_terminator("\n\n").map(|x| x.to_owned()).collect()
+pub fn input_generator(input: &str) -> String {
+    input.to_owned()
 }
 
 use std::collections::BTreeSet;
 
 #[aoc(day6, part1)]
-pub fn part1(input: &[String]) -> usize {
+pub fn part1(input: &str) -> usize {
+    let input: Vec<String> = input.split_terminator("\n\n").map(|x| x.to_owned()).collect();
     let mut qs = BTreeSet::new();
     let mut sum = 0;
     for l in input {
@@ -77,7 +78,8 @@ pub fn part1(input: &[String]) -> usize {
 }
 
 #[aoc(day6, part2)]
-pub fn part2(input: &[String]) -> usize {
+pub fn part2(input: &str) -> usize {
+    let input: Vec<String> = input.split_terminator("\n\n").map(|x| x.to_owned()).collect();
     input.iter().map(|l| {
 	let sets: Vec<BTreeSet<char>> = l.split_terminator("\n")
 	    .map(|x| x.chars().collect::<BTreeSet<char>>())
@@ -88,23 +90,116 @@ pub fn part2(input: &[String]) -> usize {
 
 use bitvec::prelude::*;
 
-#[aoc(day6, part1, opt)]
-pub fn part1_opt(input: &[String]) -> usize {
-    let mut sum = 0;
-    for l in input {
-	let l = l.as_bytes();
-	let mut arr = bitarr![Msb0, u8; 0; 26];
-	for b in l {
-	    if *b == 10u8 {
-		continue
-	    }
-	    unsafe {
-		arr.set_unchecked((*b - 97u8).into(), true);
-	    }
+const NEW_LINE: u8 = 10;
+const OFFSET: u8 = 97;
 
+#[aoc(day6, part1, opt)]
+pub fn part1_opt(input: &str) -> usize {
+    let mut sum = 0;
+    let input = input.as_bytes();
+    let mut arr = bitarr![Msb0, u32; 0; 26];
+    let n = input.len();
+    for i in 0..n {
+	let b = input[i];
+	if b == NEW_LINE {
+	    if i + 1 < n && input[i + 1] == NEW_LINE {
+		sum += arr.count_ones();
+		arr.set_all(false);
+	    }
+	} else {
+	    unsafe {
+		arr.set_unchecked((b - OFFSET) as usize, true);
+	    }
 	}
-	println!("{:?} ({}, {})", arr, arr.count_zeros(), arr.count_ones());
-	sum += arr.count_ones();
     }
+    sum += arr.count_ones();
+    //println!("{:?} ({}, {})", arr, arr.count_zeros(), arr.count_ones());
+    sum
+}
+
+use bit_field::BitField;
+
+#[aoc(day6, part1, opt_bf)]
+pub fn part1_opt_bf(input: &str) -> u32 {
+    let mut sum: u32 = 0;
+    let input = input.as_bytes();
+    let mut arr: u32 = 0;
+    let mut was_nl = false;
+    for b in input {
+	let b = *b;
+	if b == NEW_LINE {
+	    if was_nl {
+		sum += arr.count_ones();
+		arr = 0;
+	    }
+	    was_nl = true;
+	} else {
+	    was_nl = false;
+	    let i = b - OFFSET;
+	    arr.set_bit(i.into() , true);
+	}
+    }
+    sum += arr.count_ones();
+    sum
+}
+
+
+const BF_MAX: u32 = 134217727; // 2^27 - 1
+
+#[aoc(day6, part2, opt)]
+pub fn part2_opt(input: &str) -> u32 {
+    let mut sum: u32 = 0;
+    let input = input.as_bytes();
+    let mut arr: u32 = 0;
+    let mut grp: u32 = BF_MAX;
+    let mut was_nl = false;
+    for b in input {
+	let b = *b;
+	if b == NEW_LINE {
+	    if !was_nl {
+		grp &= arr;
+		arr = 0;
+
+	    } else {
+		sum += grp.count_ones();
+		grp = BF_MAX;
+	    }
+	    was_nl = true;
+	} else {
+	    was_nl = false;
+	    let i = b - OFFSET;
+	    arr.set_bit(i.into() , true);
+	}
+    }
+    grp &= arr;
+    sum += grp.count_ones();
+    sum
+}
+
+#[aoc(day6, part2, opt_vec)]
+pub fn part2_opt_vec(input: &str) -> u32 {
+    let mut sum: u32 = 0;
+    let input = input.as_bytes();
+    let mut arr: u32 = 0;
+    let mut grp: u32 = BF_MAX;
+    let mut was_nl = false;
+    for b in input.iter().map(|b| b.saturating_sub(OFFSET - 1)) {
+	if b == 0 {
+	    if !was_nl {
+		grp &= arr;
+		arr = 0;
+
+	    } else {
+		sum += grp.count_ones();
+		grp = BF_MAX;
+	    }
+	    was_nl = true;
+	} else {
+	    was_nl = false;
+	    arr.set_bit((b - 1).into() , true);
+	}
+    }
+    grp &= arr;
+    sum += grp.count_ones();
     sum
 }
