@@ -43,18 +43,53 @@ You can also [Shareon Twitter Mastodon] this puzzle.
  */
 
 
-
-
+/*
 #[aoc_generator(day7)]
-pub fn input_generator(input: &str) -> Vec<u32> {
-    input
-        .lines()
-        .map(|l| l.parse().unwrap())
-	.collect()
+pub fn input_generator(input: &str) -> Vec<Rule> {
+    lazy_static! {
+	static ref RE: Regex = Regex::new(r"\s+bag[s]?(?:[\s,\.])?(?:contain)?\s*").unwrap();
+	static ref RE_ITEM: Regex = Regex::new(r"^\s?(\d)+ (\w+ \w+)$").unwrap();
+    }
+    let mut idx = 9999;
+
+        let mut next_id: u16 = 0;
+        let (containers, contents) = input.lines().map(|x| RE.split(x)).map(|mut x| {
+	    (x.next().unwrap(), x)
+	}).unzip();
+
+    let mut rules = containers.enumerate().map(|i, x| {
+	(i, Rule{id: i, ..Default::default()})
+    }).collect::<HashMap<Rule>>();
+
+    for (i, row) in contents.enumerate() {
+	for (j, c) in row.enumerate() {
+	    if c.is_empty() || c == "no other" {
+		continue
+	    }
+	    let caps = RE_ITEM.captures(c).unwrap();
+	    let caps = RE_ITEM.captures(c).unwrap();
+	    rule.counts[i as usize] = caps.get(1).and_then(|x| x.as_str().parse().ok()).unwrap();
+	    let name = caps.get(2).unwrap().as_str();
+	    let mut rule = rule.get()
+	    rule.contains[i as usize] = *id;
+	    rules[""].counts[j] = caps.get(1).and_then(|x| x.as_str().parse().ok()).unwrap();
+	    rule.contains[j] = *id;
+	}
+
+    }
+	let mut i: u8 = 0;
+	for c in x {
+	    println!("'{}'", c);
+	    i += 1;
+	}
+	rule.n = i;
+    1
+    }).collect()
+
 }
 
-
-#[aoc(day7, part1)]
-pub fn part1(input: &[u32]) -> u32 {
+*/
+/*#[aoc(day7, part1)]
+pub fn part1(input: &[Rule]) -> u32 {
     unreachable!()
-}
+}*/

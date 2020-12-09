@@ -60,17 +60,154 @@ executed a second time, what value is in the accumulator?
 To begin, get_your_puzzle_input.
 Answer: [answer              ] [[Submit]]
 You can also [Shareon Twitter Mastodon] this puzzle.
-*/
+ */
+use rpds::HashTrieSet;
+use std::iter::FromIterator;
+use std::rc::Rc;
+
+pub enum Instr {
+    Nop(i16),
+    Acc(i16),
+    Jmp(i16),
+}
+
+impl Instr {
+    fn flip(self) -> Instr {
+	match self {
+	    Instr::Nop(x) => Instr::Jmp(x),
+	    Instr::Jmp(x) => Instr::Nop(x),
+	    _ => self
+	}
+    }
+}
+
+
+#[derive(Clone)]
+pub struct Machine {
+    ic: u16,
+    pub acc: i16,
+    instrs: Rc<Vec<Instr>>,
+    visited: HashTrieSet<u16>
+}
+
+impl PartialEq for Machine {
+    fn eq(&self, other: &Self) -> bool {
+        self.ic == other.ic
+	    && self.acc == other.acc
+	    && self.visited == other.visited
+	    && Rc::ptr_eq(&self.instrs, &other.instrs)
+    }
+}
+
+#[derive(PartialEq)]
+enum MachineStatus {
+    Eof,
+    Running,
+    CycleDetected,
+    Forked(Box<Machine>)
+}
+
+impl Machine {
+    fn new(v: Vec<Instr>) -> Machine {
+	Machine{ ic: 0, acc: 0, instrs: Rc::new(v), visited: HashTrieSet::new() }
+    }
+    #[inline]
+    fn run_one(&mut self) -> MachineStatus {
+	if self.ic >= self.instrs.len() as u16 {
+	    return MachineStatus::Eof
+	}
+	if self.visited.contains(&self.ic) {
+	    return MachineStatus::CycleDetected
+	}
+	self.visited.insert_mut(self.ic);
+	match self.instrs[self.ic as usize] {
+	    Instr::Nop(_) => self.ic += 1,
+	    Instr::Acc(x) => { self.acc += x; self.ic += 1; },
+	    Instr::Jmp(x) => self.ic = self.ic.wrapping_add(x as u16),
+	}
+	MachineStatus::Running
+    }
+    fn run_many(&mut self) -> MachineStatus {
+	loop {
+	    match self.run_one() {
+		MachineStatus::Running => continue,
+		x => return x
+	    }
+	}
+    }
+
+    fn run_one_forking(&mut self) -> MachineStatus {
+	if self.ic >= self.instrs.len() as u16 {
+	    return MachineStatus::Eof
+	}
+	if self.visited.contains(&self.ic) {
+	    return MachineStatus::CycleDetected
+	}
+	self.visited.insert_mut(self.ic);
+	match self.instrs[self.ic as usize] {
+	    Instr::Acc(x) => { self.acc += x; self.ic += 1; },
+	    Instr::Nop(x) => {
+		let mut forked = self.clone();
+		forked.ic = self.ic.wrapping_add(x as u16); // jmp on fork
+		self.ic += 1; // nop on self
+	    }
+	    Instr::Jmp(x) => {
+		let mut forked = self.clone();
+		self.ic = self.ic.wrapping_add(x as u16);
+		forked.ic += 1;
+	    }
+	}
+	MachineStatus::Running
+    }
+
+    fn run_many_forking(&mut self) -> i16 {
+	loop {
+	    match self.run_one_forking() {
+		MachineStatus::CycleDetected => unreachable!(),
+		MachineStatus::Running => continue,
+		MachineStatus::Forked(mut m2) => {
+		    println!("forked!");
+		    if m2.run_many() == MachineStatus::Eof {
+			return m2.acc;
+		    }
+		},
+		MachineStatus::Eof => { return self.acc },
+	    }
+	}
+
+    }
+}
+
+
+
 #[aoc_generator(day8)]
-pub fn input_generator(input: &str) -> Vec<u32> {
-    input
+pub fn input_generator(input: &str) -> Machine {
+    Machine::new(input
         .lines()
-        .map(|l| l.parse().unwrap())
-	.collect()
+        .map(|l| {
+	    let mut splitter = l.splitn(2, ' ');
+	    let operator = splitter.next().unwrap();
+	    let operand: i16 = splitter.next().unwrap().parse().unwrap();
+	    match operator {
+		"nop" => Instr::Nop(operand),
+		"acc" => Instr::Acc(operand),
+		"jmp" => Instr::Jmp(operand),
+		_ => unreachable!()
+	    }
+	}).collect())
 }
 
 
 #[aoc(day8, part1)]
-pub fn part1(input: &[u32]) -> u32 {
+pub fn part1(input: &Machine) -> i16 {
+    let mut input = input.clone();
+    if input.run_many() == MachineStatus::CycleDetected {
+	return input.acc;
+    }
     unreachable!()
+}
+
+#[aoc(day8, part2)]
+pub fn part2(input: &Machine) -> i16 {
+    input.clone().run_many_forking()
 }

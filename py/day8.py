@@ -64,99 +64,51 @@ You can also [Shareon Twitter Mastodon] this puzzle.
 
 from fastcore.all import L, Self
 from util import *
+from util.cpu import cpu_transform, CPU, Instructions
 
 e = Exercise(8, parser={"field_sep": " "})
 
+e.transformer(cpu_transform)
+
 @e.part1()
 def part1(xs):
-    ic = 0
-    acc = 0
-    instrs = xs.t
-    visited = set()
-    while True:
-        x = instrs[ic]
-        if ic == len(instrs):
-            print("fell outt")
-            return None
-        if ic in visited:
-            return acc
-        visited.add(ic)
-        if x[0] == "nop":
-            ic += 1
-        elif x[0] == "acc":
-            acc += int(x[1])
-            ic += 1
-        elif x[0] == "jmp":
-            ic +=  int(x[1])
-        else:
-            print("bad instr")
-            return
+    c = CPU(xs)
+    for (operation, operand) in c.run():
+        if operation == Instructions.acc:
+            c.reg.acc += operand
+        elif operation == Instructions.jmp:
+            c.reg.ic += operand
+    if c.broke_on_visited:
+        return c.reg.acc
 
 
 def switch_instr(instrs, i):
     c = list(instrs)
-    if instrs[i][0] == "nop":
-        new =  "jmp", instrs[i][1]
+    if instrs[i][0] == Instructions.nop:
+        new =  Instructions.jmp, instrs[i][1]
         c[i] = new
-    elif instrs[i][0] == "jmp":
-        new =  "nop", instrs[i][1]
+    elif instrs[i][0] == Instructions.jmp:
+        new = Instructions.nop, instrs[i][1]
         c[i] = new
     return c
 
 def gen_attempts(instrs):
     for (i, x) in enumerate(instrs):
-        if x[0] == "nop" or x[0] == "jmp":
+        if x[0] == Instructions.nop or x[0] == Instructions.jmp:
             yield switch_instr(instrs, i)
 
 @e.part2()
 def p2(xs):
-    orig_instrs = xs.t
+    orig_instrs = xs
     for instrs in gen_attempts(orig_instrs):
-        print("woo")
-        ic = 0
-        acc = 0
-        visited = set()
-        while True:
-            if ic >= len(instrs):
-                return acc
-            x = instrs[ic]
-            if ic in visited:
-                break
-            visited.add(ic)
-            if x[0] == "nop":
-                ic += 1
-            elif x[0] == "acc":
-                acc += int(x[1])
-                ic += 1
-            elif x[0] == "jmp":
-                ic += int(x[1])
-            else:
-                print("bad instr")
+        c = CPU(instrs)
+        for (operation, operand) in c.run():
+            if operation == Instructions.acc:
+                c.reg.acc += operand
+            elif operation == Instructions.jmp:
+                c.reg.ic += operand
+        if not c.broke_on_visited:
+            return c.reg.acc
     print("fail")
 
-"""
-@e.part2()
-def part2(xs):
-    ic = 0
-    acc = 0
-    instrs = xs.t
-    visited = set()
-    bad_jmps = set()
-
-
-    jumps = {}
-    exits = {}
-    for (i, instr) in enumerate(instrs):
-        if instr[0] == "jmp":
-            jumps[i] = i + int(instr[1])
-        elif instr[0] == "nop":
-            jumps[i] = i + 1
-
-    for j in jumps:
-        if jumps[j] >= len(instrs):
-            exits[j] = True
-        else:
-
-    for x in exits:
-"""
 e()

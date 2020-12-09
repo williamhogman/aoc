@@ -56,12 +56,13 @@ const ASCII_L: u8 = 'L' as u8;
 
 #[inline]
 pub fn to_id(l: &str) -> u16 {
-    let mut bit: u16 = 16;
+    let mut bit: u16 = 1;
     let mut num: u16 = 0;
     for x in l.as_bytes() {
-	let to_set = (!(*x >> 2) & 0b1) as u16;
-	num |= (to_set << bit);
-	bit -= 1;
+	if x == ASCII_R || x == ASCII_B {
+	num |= bit;
+	}
+	bit <<= 1;
     }
     num
 }
