@@ -59,7 +59,7 @@ pub fn to_id(l: &str) -> u16 {
     let mut bit: u16 = 1;
     let mut num: u16 = 0;
     for x in l.as_bytes() {
-	if x == ASCII_R || x == ASCII_B {
+	if *x == ASCII_R || *x == ASCII_B {
 	num |= bit;
 	}
 	bit <<= 1;

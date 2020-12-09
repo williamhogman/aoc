@@ -63,17 +63,83 @@ this property?
 To begin, get_your_puzzle_input.
 Answer: [answer              ] [[Submit]]
 You can also [Shareon Twitter Mastodon] this puzzle.
-*/
+ */
+use itertools::Itertools;
+
 #[aoc_generator(day9)]
-pub fn input_generator(input: &str) -> Vec<u32> {
+pub fn input_generator(input: &str) -> Vec<u64> {
     input
         .lines()
         .map(|l| l.parse().unwrap())
 	.collect()
 }
 
-
 #[aoc(day9, part1)]
-pub fn part1(input: &[u32]) -> u32 {
+pub fn part1(input: &[u64]) -> u64 {
+    input.windows(26)
+	.filter(|wnd| wnd[0..25].iter().combinations(2).all(|x| x[0] + x[1] != wnd[25]))
+		.map(|wnd| wnd[25])
+		.next().unwrap()
+}
+
+#[aoc(day9, part1, opt)]
+pub fn part1_opt(input: &[u64]) -> u64 {
+    for wnd in input.windows(26) {
+	let mut adds_up = false;
+	'outer: for i in 0..25 {
+	    for j in i+1..25 {
+		if wnd[i] + wnd[j] == wnd[25] {
+		    adds_up = true;
+		    break 'outer;
+		}
+	    }
+	}
+	if !adds_up {
+	    return wnd[25];
+	}
+    }
     unreachable!()
+}
+
+#[aoc(day9, part2)]
+pub fn part2(input: &[u64]) -> u64 {
+    let target: u64 = 217430975;
+    let mut i = 0;
+    let mut j = 1;
+    let mut current = input[0] + input[1];
+    while j < input.len() {
+	if current < target {
+	    j += 1;
+	    current += input[j];
+	}
+	if current > target {
+	    current -= input[i];
+	    i += 1;
+	}
+	if current == target {
+	    return input[i..j].iter().min().unwrap() + input[i..j].iter().max().unwrap()
+	}
+    }
+    unreachable!();
+}
+
+
+use std::collections::VecDeque;
+
+#[aoc(day9, part2, queue)]
+pub fn part2_queue(input: &[u64]) -> u64 {
+    let mut deq = VecDeque::with_capacity(25);
+    let target: u64 = 217430975;
+    let mut current = 0;
+    for val in input {
+	deq.push_back(val);
+	current += val;
+	while current > target {
+	    current -= deq.pop_front().unwrap();
+	}
+	if current == target {
+	    return deq.iter().minmax().into_option().map(|(a, b)| *a + *b).unwrap()
+	}
+    }
+    unreachable!();
 }

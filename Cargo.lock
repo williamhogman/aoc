@@ -17,8 +17,10 @@ dependencies = [
  "aoc-runner-derive",
  "bit_field",
  "bitvec",
+ "itertools",
  "lazy_static",
  "regex",
+ "rpds",
 ]
 
 [[package]]
@@ -51,6 +53,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "archery"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0a8da9bc4c4053ee067669762bcaeea6e241841295a2b6c948312dad6ef4cc02"
+dependencies = [
+ "static_assertions",
+]
+
+[[package]]
 name = "bit_field"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -69,10 +80,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "either"
+version = "1.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
+
+[[package]]
 name = "funty"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ba62103ce691c2fd80fbae2213dfdda9ce60804973ac6b6e97de818ea7f52c8"
+
+[[package]]
+name = "itertools"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "284f18f85651fe11e8a991b2adb42cb078325c996ed026d994719efcfca1d54b"
+dependencies = [
+ "either",
+]
 
 [[package]]
 name = "itoa"
@@ -135,6 +161,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3b181ba2dcf07aaccad5448e8ead58db5b742cf85dfe035e2227f137a539a189"
 
 [[package]]
+name = "rpds"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56481afe084b54bb78bf63b9914dddef620d786af556530e0fad1398eaf11b2a"
+dependencies = [
+ "archery",
+]
+
+[[package]]
 name = "ryu"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -167,6 +202,12 @@ dependencies = [
  "ryu",
  "serde",
 ]
+
+[[package]]
+name = "static_assertions"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "syn"

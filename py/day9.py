@@ -125,6 +125,9 @@ def example():
 def part2(xs):
     nos = xs.t.map(lambda x: x[0])
     target = 217430975
+    i = 0
+    j = 0
+
     for i in range(len(nos)):
         current = nos[i]
         r_min = nos[i]
