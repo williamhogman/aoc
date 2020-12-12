@@ -95,17 +95,82 @@ no seats change state. How many seats end up occupied?
 To begin, get_your_puzzle_input.
 Answer: [answer              ] [[Submit]]
 You can also [Shareon Twitter Mastodon] this puzzle.
-*/
-#[aoc_generator(day11)]
-pub fn input_generator(input: &str) -> Vec<u32> {
-    input
-        .lines()
-        .map(|l| l.parse().unwrap())
-	.collect()
+ */
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum Tile {
+    Floor,
+    Free,
+    Taken,
 }
 
+type Point = (i16, i16);
+
+pub struct Update(Point, Tile);
+
+use array2d::Array2D;
+
+#[aoc_generator(day11)]
+pub fn input_generator(input: &str) -> Array2D<Tile> {
+    let rows: Vec<Vec<Tile>> = input
+        .lines()
+        .map(|l| l.chars().map(|c| match c {
+	    '.' => Tile::Floor,
+	    'L' => Tile::Free,
+	    '#' => Tile::Taken,
+	    _ => unreachable!()
+	}).collect())
+	.collect();
+    Array2D::from_rows(&rows)
+}
+
+static ADJACENT: &'static [Point] = &[
+    (-1, -1),
+    (-1, 0),
+    (-1, 1),
+    (0, -1),
+    // (0, 0) but thats us
+    (0, 1),
+    (1, -1),
+    (1, 0),
+    (1, 1)
+];
+
+pub fn round(state: &Array2D<Tile>) -> Vec<Update> {
+    let mut updates: Vec<Update> = Vec::with_capacity(50);
+    for i in 0..state.num_rows() {
+	for j in 0..state.num_columns() {
+	    if state[(i, j)] == Tile::Floor {
+		continue
+	    }
+	    let adj_taken = ADJACENT
+		.iter()
+		.map(|(a, b)| (i.wrapping_add(*a as usize), j.wrapping_add(*b as usize) ))
+		.map(|(a, b)| *state.get(a as usize, b as usize).unwrap_or(&Tile::Floor))
+		.filter(|a| *a == Tile::Taken)
+		.count();
+	    if state[(i, j)] == Tile::Free && adj_taken == 0 {
+		updates.push(Update((i as i16, j as i16), Tile::Taken))
+	    } else if adj_taken > 4  {
+		updates.push(Update((i as i16, j as i16), Tile::Free))
+	    }
+
+	}
+    }
+    updates
+}
 
 #[aoc(day11, part1)]
-pub fn part1(input: &[u32]) -> u32 {
-    unreachable!()
+pub fn part1(input: &Array2D<Tile>) -> usize {
+    let mut state = input.clone();
+    loop {
+	let updates = round(&state);
+	if updates.len() == 0 {
+	    break
+	}
+	for Update((i, j), t) in updates {
+	    state.set(i as usize, j as usize, t).unwrap()
+	}
+    }
+    state.elements_row_major_iter().filter(|t| **t == Tile::Taken).count()
 }
