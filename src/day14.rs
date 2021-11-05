@@ -1,10 +1,10 @@
-"""
+/*
 ***** --- Day 14: Docking Data --- *****
 As your ferry approaches the sea port, the captain asks for your help
 again. The computer system that runs this port isn't compatible with the
 docking program on the ferry, so the docking parameters aren't being
 correctly initialized in the docking program's memory.
-After a brief inspection, you discover that the sea port's computer system
+After a brief inspectxion, you discover that the sea port's computer system
 uses a strange bitmask system in its initialization program. Although you
 don't have the correct decoder chip handy, you can emulate it in software!
 The initialization program (your puzzle input) can either update the
@@ -54,105 +54,116 @@ memory after it completes?
 To begin, get_your_puzzle_input.
 Answer: [answer              ] [[Submit]]
 You can also [Shareon Twitter Mastodon] this puzzle.
-"""
+ */
+use regex::Regex;
 
-from fastcore.all import L, Self
-from util import *
+type Mask = (u64, u64);
 
-e = Exercise(14)
+#[derive(Debug, Copy, Clone)]
+pub enum Operation {
+    SetMask(Mask),
+    SetMem(u64, u64),
+}
 
-def set_bit(value, bit):
-    return value | (1<<bit)
+use Operation::*;
 
-def make_mask(sets):
-    m = 0
-    for s in sets:
-        m = set_bit(m, s)
-    return m
+fn parse_mask(input: &str) -> Mask {
+    let mut mask: Mask = (0, 0);
+    for (i, c) in input.bytes().rev().enumerate() {
+	match c {
+            b'0' => mask.0 &= !(1 << i),
+	    b'1' => mask.1 |= 1 << i,
+            _ => {}
+	}
+    }
+    mask
+}
 
-lower36 = (2^36)-1
+fn parse(input: &str) -> Operation {
+    lazy_static! {
+        static ref RE: Regex = Regex::new(r"^(?:(?P<mask>mask)|(?:(?:mem\[)(?P<loc>\d+)(?:\]))) = (?P<val>[\dX]+)").unwrap();
+    }
+    let caps = RE.captures(input).unwrap();
+    let operation = caps.name("mask").or(caps.name("loc")).unwrap().as_str();
+    let operand = caps.name("val").unwrap().as_str();
+    match operation {
+	"mask" => SetMask(parse_mask(operand)),
+	_ => SetMem(operation.parse().unwrap(), operand.parse().unwrap())
+    }
+}
 
-def parse_mask(mask):
-    mask_falses = int(mask.replace("X", "1"), 2)
-    mask_trues = int(mask.replace("X", "0"), 2)
-    return (mask_trues, mask_falses, mask)
-
-def apply_mask(mask, value):
-    (trues, falses, _) = mask
-    return (value | trues) & falses
-
-print(apply_mask(parse_mask("XXXXXXXXXXXXXXXXXXXXXXXXXXXXX1XXXX0X"), 11))
-assert apply_mask(parse_mask("XXXXXXXXXXXXXXXXXXXXXXXXXXXXX1XXXX0X"), 11) == 73
-
-
-@e.transformer(map=True)
-def xform(xs):
-    var = xs[0]
-    val = xs[2]
-    if var == "mask":
-        return "mask", parse_mask(val)
-    else:
-         return (int(var[4: -1]), val)
-
-
-
-
-@e.part1()
-def part1(xs):
-    mask = None
-    memory = dict()
-    for operation, operand in xs.t:
-        if operation == "mask":
-            mask = operand
-        else:
-            memory[operation] = apply_mask(mask, operand)
-
-    return sum(memory.values())
+#[aoc_generator(day14)]
+pub fn input_generator(input: &str) -> Vec<Operation> {
+    input
+        .lines()
+        .map(parse)
+	.collect()
+}
 
 
-def find_candidates(pattern, i=0):
-    if i == len(pattern):
-        yield pattern
-        return
+use std::collections::HashMap;
+use bit_field::BitField;
 
-    if pattern[i] == 'X':
-        for ch in "01":
-             # replace '?' with 0 and 1
-            pattern[i] = ch
+struct Machine {
+    memory: HashMap<u64, u64>,
+    mask: Mask,
+}
 
-            yield from find_candidates(pattern, i + 1)
+impl Machine {
+    fn new() -> Machine {
+	Machine { memory: HashMap::new(), mask: (0, 0) }
+    }
 
-            # backtrack
-            pattern[i] = 'X'
+    fn sum(&self) -> u64 {
+	self.memory.values().fold(0, |a, b| a + b)
+    }
+}
 
-    else:
-        # if the current character is 0 or 1, ignore it and
-        # recur for the remaining pattern
-        yield from find_candidates(pattern, i + 1)
+fn apply_mask((zeros, ones): Mask, val: u64) -> u64 {
+    (val & zeros) | ones
+}
 
-def apply_mask2(mask, val):
-    (trues, falses, xs) = mask
-    xs = list(xs.replace("1", "0"))
-    val |= trues
-    for c in find_candidates(xs):
-        yield val ^ int("".join(c), 2)
+#[aoc(day14, part1)]
+pub fn part1(input: &[Operation]) -> u64 {
+    let mut m = Machine::new();
+    for o in input {
+	match o {
+	    SetMask(x) => m.mask = *x,
+	    SetMem(x, y) => {
+		let val = apply_mask(m.mask, *y);
+		m.memory.insert(*x, val);
+	    }
+	}
+    }
+    m.sum()
+}
 
+const LIMIT_36_BITS: u64 = u64::max_value() >> (64 - 36);
+#[aoc(day14, part2)]
+pub fn part2(input: &[Operation]) -> u64 {
+    let mut m = Machine::new();
+    for o in input {
+	match o {
+	    SetMask(x) => m.mask = *x,
+	    SetMem(addr, y) => {
+		let (and, or) = m.mask;
+		let floating_base = or | !and;
+		let base_addr = (addr | or) & floating_base;
+		let mut floating = floating_base;
+		loop {
+                    let floating_inverted = (!floating) & LIMIT_36_BITS;
+                    let floating_address = base_addr | floating_inverted;
+                    m.memory.insert(floating_address, *y);
 
-assert set(apply_mask2(parse_mask("000000000000000000000000000000X1001X"), 42)) == set([26, 27, 58, 59])
+		    if floating & LIMIT_36_BITS == LIMIT_36_BITS {
+                        break;
+                    }
+                    floating += 1;
+                    floating |= floating_base;
+		}
 
-@e.part2()
-def part2(xs):
-    mask = None
-    memory = dict()
-    for operation, operand in xs.t:
-        if operation == "mask":
-            mask = operand
-        else:
-            for addr in apply_mask2(mask, operation):
-                memory[addr] = operand
-
-    return sum(memory.values())
-
-
-
-e()
+	    }
+	}
+    }
+    m.sum()
+}

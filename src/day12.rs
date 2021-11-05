@@ -66,6 +66,7 @@ struct VV {
 impl VV {
     const ORIGIN: VV = Self{x: 0, y: 0};
     const EAST: VV = Self {x: 1, y: 0};
+    const ONE: VV = Self {x: 1, y: 1};
 
     fn origin() -> Self {
 	Self::ORIGIN.clone()
@@ -73,6 +74,11 @@ impl VV {
     fn due_east() -> Self {
 	Self::EAST.clone()
     }
+
+    fn new(x: i16, y: i16) -> Self {
+	Self{x: x, y: y}
+    }
+
     pub fn rot(&mut self, turns: u8) {
 	if turns > 1 {
 	    self.x = -self.x;
@@ -111,6 +117,17 @@ impl AddAssign<&Command> for VV {
     }
 }
 
+impl AddAssign<Command> for VV {
+    fn add_assign(&mut self, other: Command) {
+	match other {
+	    E(x) => self.x += x,
+	    S(y) => self.y += y,
+	    R(r) => self.rot(r),
+	    _ => unreachable!(),
+	}
+    }
+}
+
 
 
 
@@ -120,7 +137,6 @@ impl Mul<i16> for VV {
 	return Self{x: self.x * rhs, y: self.y * rhs};
     }
 }
-
 
 
 #[aoc_generator(day12)]
@@ -142,17 +158,29 @@ pub fn input_generator(input: &str) -> Vec<Command> {
 	.collect()
 }
 
+struct Frame {
+    pub coords: VV,
+    pub heading: VV,
+}
 
-#[aoc(day12, part1)]
-pub fn part1(input: &[Command]) -> i16 {
-    let mut coords = VV::origin();
-    let mut heading = VV::due_east();
-    for c in input {
-	match c {
-	    F(x) => coords += heading * *x,
-	    S(_) | E(_) => coords += c,
-	    R(_) => heading += c
+impl Frame {
+    pub fn new(heading: VV) -> Self {
+	Self{coords: VV::origin(), heading: heading}
+    }
+
+    pub fn modify_coords(&mut self, c: Command) {
+	if let F(x) = c {
+	    self.coords += self.heading * x;
+	} else {
+	    self.coords += c;
 	}
     }
-    coords.abs()
+
+    pub fn modify_heading(&mut self, c: Command) {
+	self.heading += c
+    }
+
+    pub fn dist(&self) -> i16 {
+	self.coords.abs()
+    }
 }
