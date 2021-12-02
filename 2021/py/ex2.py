@@ -46,12 +46,23 @@ def run_command2(origin, cmd):
         return (x, z, aim - amount)
 
 
-def main():
+def part1():
     commands = parse_commands(open("ex2.txt").read())
-    # commands = parse_commands(example)
+    res = run_commands((0, 0), commands, cmd=run_command)
+    print(res)
+    print(res[0] * res[1])
+
+
+def part2():
+    commands = parse_commands(open("ex2.txt").read())
     res = run_commands((0, 0, 0), commands, cmd=run_command2)
     print(res)
     print(res[0] * res[1])
+
+
+def main():
+    part1()
+    part2()
 
 
 if __name__ == "__main__":
