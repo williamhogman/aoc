@@ -38,6 +38,11 @@ def points_on_line(p1, p2):
     x1, y1 = p1
     x2, y2 = p2
 
+    for i in range(max(abs(x1 - x2), abs(y1 - y2))):
+        dx = i if x1 < x2 else -i
+        dy = i if y1 < y2 else -i
+        yield (x1 + dx, y1 + dy)
+
     if x1 == x2:
         for y in range(min(y1, y2), max(y1, y2) + 1):
             yield (x1, y)
