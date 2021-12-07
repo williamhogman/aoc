@@ -1,46 +1,34 @@
-pub type Fish = u8;
-use std::mem;
-
 type Counter = usize;
 
 #[derive(Clone)]
 pub struct FishCounter {
     fish: [Counter; 9],
-    buf: [Counter; 9],
 }
 
 impl FishCounter {
     pub fn from(fish: [Counter; 9]) -> Self {
         Self {
             fish,
-            buf: unsafe { mem::uninitialized() }
         }
-    }
-    pub fn new(input: &[Fish]) -> Self {
-        let mut fish = [0; 9];
-        for f in input {
-            fish[*f as usize] += 1;
-        }
-        let buf = unsafe { mem::uninitialized() };
-        FishCounter { fish, buf}
     }
     pub fn count(&self) -> Counter {
         self.fish.iter().sum()
     }
+    #[inline]
     pub fn next_round(&mut self) {
+        let spawned = self.fish[0];
         for i in 0..8 {
-            self.buf[i] = self.fish[i + 1];
+            self.fish[i] = self.fish[i + 1];
         }
-        self.buf[6] += self.fish[0];
-        self.buf[8] = self.fish[0];
-        mem::swap(&mut self.fish, &mut self.buf);
+        self.fish[6] += spawned;
+        self.fish[8] = spawned;
     }
 }
 
 #[aoc_generator(day6)]
-pub fn input_generator(input: &str) -> [Counter; 9] {
+pub fn input_generator(input: &str) -> [usize; 9] {
     let mut data = [0; 9];
-    for x in input.split(",").map(|l| l.parse::<u8>().unwrap()) {
+    for x in input.split(',').map(|l| l.parse::<u8>().unwrap()) {
         data[x as usize] += 1;
     }
     data
@@ -63,6 +51,3 @@ fn solve_part1(input: &[Counter; 9]) -> Counter {
 fn solve_part2(input: &[Counter; 9]) -> Counter {
     solve(256, input)
 }
-
-
-
